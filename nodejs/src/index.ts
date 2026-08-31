@@ -47,6 +47,9 @@ try {
     model: process.env.COPILOT_MODEL ?? "auto",
     workingDirectory: workspace,
     tools: [bobAnalysisTool],
+    // tools registers the handler; this allowlist makes it usable. Because the
+    // client uses mode: "empty", omitting availableTools would reject session
+    // creation instead of falling back to the default CLI tools.
     availableTools: new ToolSet().addCustom("analyze_with_bob"),
     systemMessage: {
       mode: "replace",
