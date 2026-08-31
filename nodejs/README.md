@@ -5,6 +5,10 @@ SDK. The agent has one custom tool, `analyze_with_bob`, which runs IBM Bob
 Shell in headless mode against the selected workspace and returns Bob's
 codebase analysis to Copilot for synthesis.
 
+See the repository-level [conceptual architecture and Copilot SDK
+guide](../README.md#conceptual-architecture) for diagrams of the complete
+agent and tool-call flow.
+
 ## Prerequisites
 
 - Node.js 26.8.1
