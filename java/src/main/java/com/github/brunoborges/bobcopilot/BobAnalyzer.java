@@ -8,24 +8,23 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
 
-final class BobAnalyzer {
+record BobAnalyzer(
+        String command,
+        int maxOutputBytes,
+        int maxTurns,
+        Duration timeout,
+        boolean trustWorkspace) {
 
-    private final String command;
-    private final int maxOutputBytes;
-    private final int maxTurns;
-    private final Duration timeout;
-    private final boolean trustWorkspace;
-
-    BobAnalyzer(String command, int maxOutputBytes, int maxTurns, Duration timeout, boolean trustWorkspace) {
-        this.command = command;
-        this.maxOutputBytes = maxOutputBytes;
-        this.maxTurns = maxTurns;
-        this.timeout = timeout;
-        this.trustWorkspace = trustWorkspace;
+    BobAnalyzer {
+        if (command.isBlank()) {
+            throw new IllegalArgumentException("command must not be blank");
+        }
+        if (maxOutputBytes <= 0 || maxTurns <= 0 || timeout.isNegative() || timeout.isZero()) {
+            throw new IllegalArgumentException("Bob limits must be positive");
+        }
     }
 
     String analyze(Path workspace, String question, String apiKey) {
@@ -34,20 +33,20 @@ final class BobAnalyzer {
                 .redirectErrorStream(true);
         processBuilder.environment().put("BOB_API_KEY", apiKey);
 
-        try {
-            var process = processBuilder.start();
-            process.getOutputStream().close();
-            var output = CompletableFuture.supplyAsync(() -> readOutput(process.getInputStream()));
+        try (var process = processBuilder.start();
+                var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            process.outputWriter().close();
+            var output = executor.submit(() -> readOutput(process.getInputStream()));
 
-            if (!process.waitFor(timeout.toMillis(), TimeUnit.MILLISECONDS)) {
+            if (!process.waitFor(timeout)) {
                 process.destroy();
-                if (!process.waitFor(5, TimeUnit.SECONDS)) {
-                    process.destroyForcibly();
+                if (!process.waitFor(Duration.ofSeconds(5))) {
+                    process.destroyForcibly().waitFor(Duration.ofSeconds(5));
                 }
                 throw new IllegalStateException("IBM Bob Shell timed out after " + timeout.toMillis() + " ms.");
             }
 
-            var text = output.join().strip();
+            var text = output.get().strip();
             if (process.exitValue() != 0) {
                 throw new IllegalStateException(
                         "IBM Bob Shell failed with exit code " + process.exitValue() + ".\n" + text);
@@ -58,6 +57,11 @@ final class BobAnalyzer {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("Interrupted while waiting for IBM Bob Shell.", e);
+        } catch (ExecutionException e) {
+            if (e.getCause() instanceof RuntimeException runtimeException) {
+                throw runtimeException;
+            }
+            throw new IllegalStateException("Unable to read IBM Bob Shell output.", e.getCause());
         }
     }
 
@@ -104,7 +108,7 @@ final class BobAnalyzer {
             }
             return output.toString(StandardCharsets.UTF_8);
         } catch (IOException e) {
-            throw new CompletionException("Unable to read IBM Bob Shell output.", e);
+            throw new IllegalStateException("Unable to read IBM Bob Shell output.", e);
         }
     }
 }

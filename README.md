@@ -5,8 +5,8 @@ Bob Shell as a custom codebase-analysis tool.
 
 | Language | Directory | Runtime |
 |---|---|---|
-| Node.js / TypeScript | [`nodejs/`](nodejs/) | Node.js `^20.19.0` or `>=22.12.0` |
-| Java | [`java/`](java/) | Java 17+ and Maven 3.9+ |
+| Node.js / TypeScript | [`nodejs/`](nodejs/) | Node.js 26 |
+| Java | [`java/`](java/) | Java 26 and Maven 3.9+ |
 
 Each sample:
 

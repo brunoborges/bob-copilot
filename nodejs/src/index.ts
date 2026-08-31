@@ -1,9 +1,10 @@
-import "dotenv/config";
 import path from "node:path";
-import process from "node:process";
+import process, { loadEnvFile } from "node:process";
 import { CopilotClient, defineTool, ToolSet } from "@github/copilot-sdk";
 import { z } from "zod";
 import { analyzeWithBob } from "./bob.js";
+
+loadLocalEnvironment();
 
 const workspace = path.resolve(process.env.ANALYSIS_WORKSPACE ?? process.cwd());
 const question =
@@ -94,4 +95,19 @@ function readPositiveInteger(name: string, fallback: number): number {
     throw new Error(`${name} must be a positive integer.`);
   }
   return value;
+}
+
+function loadLocalEnvironment(): void {
+  if (process.env.BOB_API_KEY) {
+    return;
+  }
+
+  try {
+    loadEnvFile();
+  } catch (error) {
+    if (error instanceof Error && Reflect.get(error, "code") === "ENOENT") {
+      return;
+    }
+    throw error;
+  }
 }

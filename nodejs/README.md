@@ -7,7 +7,7 @@ codebase analysis to Copilot for synthesis.
 
 ## Prerequisites
 
-- Node.js `^20.19.0` or `>=22.12.0`
+- Node.js 26.8.1
 - A GitHub Copilot subscription and authentication, unless using a supported
   Copilot SDK BYOK configuration
 - IBM Bob Shell installed as `bob`, authenticated, and licensed
@@ -37,9 +37,9 @@ Edit `.env` and set your Bob API key:
 BOB_API_KEY=your-bob-api-key
 ```
 
-The project loads `.env` automatically with `dotenv`. The `.env` file is
-excluded by `.gitignore` and must never be committed. `.env.example` documents
-the supported settings without containing credentials.
+The project loads `.env` with Node.js's native `process.loadEnvFile()` API. The
+`.env` file is excluded by `.gitignore` and must never be committed.
+`.env.example` documents the supported settings without containing credentials.
 
 ## Run
 

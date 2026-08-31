@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process";
+import { execFile, type ExecFileException } from "node:child_process";
 
 export interface BobAnalysisOptions {
   bobCommand?: string;
@@ -44,100 +44,76 @@ export async function analyzeWithBob(
     ].join("\n"),
   );
 
-  return runCommand(options.bobCommand ?? "bob", args, {
-    cwd: workspace,
-    maxOutputBytes: options.maxOutputBytes ?? DEFAULT_MAX_OUTPUT_BYTES,
-    timeoutMs: options.timeoutMs ?? DEFAULT_TIMEOUT_MS,
-  });
-}
+  const command = options.bobCommand ?? "bob";
+  const maxOutputBytes = options.maxOutputBytes ?? DEFAULT_MAX_OUTPUT_BYTES;
+  const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
 
-interface RunCommandOptions {
-  cwd: string;
-  maxOutputBytes: number;
-  timeoutMs: number;
-}
-
-function runCommand(
-  command: string,
-  args: string[],
-  options: RunCommandOptions,
-): Promise<string> {
   return new Promise((resolve, reject) => {
-    const child = spawn(command, args, {
-      cwd: options.cwd,
-      env: process.env,
-      shell: false,
-      stdio: ["ignore", "pipe", "pipe"],
-    });
-
-    const stdout: Buffer[] = [];
-    const stderr: Buffer[] = [];
-    let outputBytes = 0;
-    let settled = false;
-
-    const finish = (error?: Error, value?: string) => {
-      if (settled) {
-        return;
-      }
-      settled = true;
-      clearTimeout(timeout);
-      if (error) {
-        reject(error);
-      } else {
-        resolve(value ?? "");
-      }
-    };
-
-    const collect = (target: Buffer[], chunk: Buffer) => {
-      outputBytes += chunk.length;
-      if (outputBytes > options.maxOutputBytes) {
-        child.kill("SIGTERM");
-        finish(
-          new Error(
-            `IBM Bob output exceeded ${options.maxOutputBytes} bytes and was terminated.`,
+    const child = execFile(
+      command,
+      args,
+      {
+        cwd: workspace,
+        encoding: "utf8",
+        env: process.env,
+        killSignal: "SIGTERM",
+        maxBuffer: maxOutputBytes,
+        timeout: timeoutMs,
+        windowsHide: true,
+      },
+      (error, stdout, stderr) => {
+        if (!error) {
+          resolve(stdout.trim());
+          return;
+        }
+        reject(
+          toBobError(
+            error,
+            stdout,
+            stderr,
+            command,
+            maxOutputBytes,
+            timeoutMs,
           ),
         );
-        return;
-      }
-      target.push(chunk);
-    };
+      },
+    );
 
-    child.stdout.on("data", (chunk: Buffer) => collect(stdout, chunk));
-    child.stderr.on("data", (chunk: Buffer) => collect(stderr, chunk));
-
-    child.on("error", (error) => {
-      finish(
-        new Error(
-          `Unable to start IBM Bob Shell (${command}): ${error.message}`,
-          { cause: error },
-        ),
-      );
-    });
-
-    child.on("close", (code, signal) => {
-      const output = Buffer.concat(stdout).toString("utf8").trim();
-      const errorOutput = Buffer.concat(stderr).toString("utf8").trim();
-
-      if (code === 0) {
-        finish(undefined, output);
-        return;
-      }
-
-      const reason = signal ? `signal ${signal}` : `exit code ${code}`;
-      finish(
-        new Error(
-          [`IBM Bob Shell failed with ${reason}.`, errorOutput || output]
-            .filter(Boolean)
-            .join("\n"),
-        ),
-      );
-    });
-
-    const timeout = setTimeout(() => {
-      child.kill("SIGTERM");
-      finish(
-        new Error(`IBM Bob Shell timed out after ${options.timeoutMs} ms.`),
-      );
-    }, options.timeoutMs);
+    child.stdin?.end();
   });
+}
+
+function toBobError(
+  error: ExecFileException,
+  stdout: string,
+  stderr: string,
+  command: string,
+  maxOutputBytes: number,
+  timeoutMs: number,
+): Error {
+  if (error.code === "ENOENT") {
+    return new Error(
+      `Unable to start IBM Bob Shell (${command}): ${error.message}`,
+      { cause: error },
+    );
+  }
+  if (error.code === "ERR_CHILD_PROCESS_STDIO_MAXBUFFER") {
+    return new Error(
+      `IBM Bob output exceeded ${maxOutputBytes} bytes and was terminated.`,
+      { cause: error },
+    );
+  }
+  if (error.killed && error.signal === "SIGTERM") {
+    return new Error(`IBM Bob Shell timed out after ${timeoutMs} ms.`, {
+      cause: error,
+    });
+  }
+
+  const output = [stderr, stdout].filter(Boolean).join("\n").trim();
+  return new Error(
+    [`IBM Bob Shell failed with exit code ${String(error.code)}.`, output]
+      .filter(Boolean)
+      .join("\n"),
+    { cause: error },
+  );
 }

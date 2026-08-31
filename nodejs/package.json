@@ -5,7 +5,7 @@
   "type": "module",
   "description": "Sample GitHub Copilot SDK agent that delegates codebase analysis to IBM Bob Shell.",
   "engines": {
-    "node": "^20.19.0 || >=22.12.0"
+    "node": ">=26.0.0 <27"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -16,12 +16,12 @@
   "dependencies": {
     "@github/copilot": "1.0.79",
     "@github/copilot-sdk": "^1.0.11",
-    "dotenv": "^17.4.2",
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@types/node": "^24.0.0",
-    "tsx": "^4.20.6",
-    "typescript": "^5.9.0"
-  }
+    "@types/node": "^26.4.0",
+    "tsx": "^4.23.13",
+    "typescript": "^7.0.2"
+  },
+  "packageManager": "npm@11.19.0"
 }

@@ -1,12 +1,12 @@
 # Java Copilot SDK agent with IBM Bob Shell
 
-This Java 17+ sample creates a GitHub Copilot SDK agent with one custom tool,
+This Java 26 sample creates a GitHub Copilot SDK agent with one custom tool,
 `analyze_with_bob`. The tool runs IBM Bob Shell in headless mode and returns
 Bob's codebase analysis to Copilot for synthesis.
 
 ## Prerequisites
 
-- Java 17 or later
+- Java 26
 - Maven 3.9 or later
 - GitHub Copilot CLI 1.0.55 or later, installed and authenticated
 - IBM Bob Shell installed as `bob`
@@ -26,8 +26,12 @@ From the `java` directory:
 
 ```bash
 cd java
+sdk env install
 cp .env.example .env
 ```
+
+The included `.sdkmanrc` selects the current JDK 26 release when SDKMAN is
+available.
 
 Edit `.env` and set:
 
