@@ -1,0 +1,26 @@
+{
+  "name": "copilot-sdk-ibm-bob-agent",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Sample GitHub Copilot SDK agent that delegates codebase analysis to IBM Bob Shell.",
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "tsx src/index.ts",
+    "test": "node --import tsx --test test/**/*.test.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@github/copilot": "1.0.79",
+    "@github/copilot-sdk": "^1.0.11",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.0"
+  }
+}

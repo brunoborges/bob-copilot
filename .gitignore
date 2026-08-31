@@ -1,0 +1,4 @@
+.copilot-sdk/
+dist/
+node_modules/
+*.log
