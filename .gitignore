@@ -1,4 +1,5 @@
 .copilot-sdk/
+.env
 dist/
 node_modules/
 *.log

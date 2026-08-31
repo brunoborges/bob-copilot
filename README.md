@@ -11,20 +11,37 @@ codebase analysis to Copilot for synthesis.
 - A GitHub Copilot subscription and authentication, unless using a supported
   Copilot SDK BYOK configuration
 - IBM Bob Shell installed as `bob`, authenticated, and licensed
-- `BOB_API_KEY` exported for Bob's headless mode
+- A Bob API key for headless mode
 
-Verify Bob before running the sample:
+Verify Bob before configuring the project:
 
 ```bash
 bob --version
 bob run --help
 ```
 
-## Install and run
+## Configure
+
+Install the dependencies and create your local environment file:
 
 ```bash
-export BOB_API_KEY="your-bob-api-key"
 npm install
+cp .env.example .env
+```
+
+Edit `.env` and set your Bob API key:
+
+```dotenv
+BOB_API_KEY=your-bob-api-key
+```
+
+The project loads `.env` automatically with `dotenv`. The `.env` file is
+excluded by `.gitignore` and must never be committed. `.env.example` documents
+the supported settings without containing credentials.
+
+## Run
+
+```bash
 npm start -- "Explain the architecture and identify the main entry points"
 ```
 
