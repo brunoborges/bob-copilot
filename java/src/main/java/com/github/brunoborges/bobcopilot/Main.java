@@ -57,6 +57,9 @@ public final class Main {
             var sessionConfig = new SessionConfig()
                     .setModel(config.copilotModel())
                     .setWorkingDirectory(config.workspace().toString())
+                    // setTools registers the handler; this allowlist also hides the
+                    // default CLI tools so Bob remains the sole analysis capability.
+                    // Omitting it would still register Bob but expose default tools too.
                     .setAvailableTools(List.of("custom:analyze_with_bob"))
                     .setTools(List.of(tool))
                     .setOnPermissionRequest(PermissionHandler.APPROVE_ALL)
